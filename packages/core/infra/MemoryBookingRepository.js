@@ -17,7 +17,7 @@ export class MemoryBookingRepository {
   async listBookingsForTenantId(tenantId) {
     return this._bookings.filter((booking) => booking.tenantId === tenantId);
   }
-  
+
   async getAvailableAccomodations({ from, to }) {
     const bookedAccomodationsIds = this._bookings
       .filter((booking) =>
