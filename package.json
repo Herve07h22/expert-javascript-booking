@@ -1,12 +1,7 @@
 {
-  "name": "expert-javascript-booking",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
-  "scripts": {
-    "test": "vitest"
-  },
-  "devDependencies": {
-    "vitest": "^1.6.0"
-  }
+  "name": "projet-booking",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
 }
