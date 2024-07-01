@@ -1,5 +1,6 @@
 import { fakeAccomodations } from "./fakeAccomodations";
 import { isOverlapped, toDate } from "../domain/app/dates";
+
 export class MemoryBookingRepository {
   _bookings = [];
   _accomodations = fakeAccomodations;
