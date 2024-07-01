@@ -5,13 +5,18 @@ import { App } from "@booking/core/domain/app/App";
 import { testDependencies } from "@booking/core/infra/testDependencies";
 import { login } from "@booking/core/domain/usecases/login";
 import { book } from "@booking/core/domain/usecases/book";
+import { toDate } from "@booking/core/domain/app/dates";
+
+const app = new App(testDependencies());
 
 export async function loader() {
-  const app = new App(testDependencies());
-  return app.dependencies.bookings.getAccomodations();
+  return  await app.dependencies.bookings.getAvailableAccomodations({
+    from: toDate("2024-06-02"),
+    to: toDate("2024-06-04"),
+  });
 }
+
 export async function action() {
-  const app = new App(testDependencies());
   const session = await app.run([
     login({ email: "faketenant@mail.com", password: "secret" }),
     book({
@@ -22,13 +27,14 @@ export async function action() {
       to: new Date("2024-06-04"),
     }),
   ]);
+  console.log(session)
   return session.error
     ? { status: "error", error: session.error }
     : { status: "ok" };
 }
 
 function HomePage() {
-  const { accomodations, loading } = useAccomodations();
+  const { accomodations, loading, refresh } = useAccomodations();
 
   return (
     <Layout loading={loading}>
@@ -36,7 +42,7 @@ function HomePage() {
         <Accomodation
           key={accomodation.id}
           accomodation={accomodation}
-          onBook={action}
+          onBook={() => action().then(({status}) => status === "ok" ?  refresh() : {})}
         />
       ))}
     </Layout>

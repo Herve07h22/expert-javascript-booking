@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { loader  } from "../pages/HomePage";
+import { loader } from "../pages/HomePage";
 
 export function useAccomodations() {
   // Nos 2 états sur la page
@@ -15,5 +15,5 @@ export function useAccomodations() {
   useEffect(() => {
     loadAccomodation();
   }, []);
-  return { accomodations, loading };
+  return { accomodations, loading, refresh: loadAccomodation };
 }
