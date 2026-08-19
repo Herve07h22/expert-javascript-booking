@@ -1,30 +1,42 @@
 import { useState } from "react";
-import { App, book, login, testDependencies, Stay } from "@booking/core";
+import { App, book, login, testDependencies, Stay, Occupancy } from "@booking/core";
 import { Layout } from "../components/Layout";
 import { Accommodation } from "../components/Accommodation";
 import { useAccommodations } from "../hooks/useAccommodations";
+import { readCriteria, writeCriteria } from "../criteria";
 
 // L'application est initialisée une seule fois, dans le module.
-// Surtout pas dans le loader ou l'action : les dépendances seraient
-// réinitialisées à chaque appel, et l'état reviendrait à l'état initial.
 const app = new App(testDependencies());
 
-// Les dates du séjour recherché. Elles viendront du bandeau de recherche plus tard.
-const searched = Stay.parse({ from: "2024-06-02", to: "2024-06-04" }).value;
+// Le loader reçoit des chaînes venues d'un humain : il peut échouer.
+// Aucune règle n'est réécrite ici, Stay et Occupancy les portent déjà.
+export async function loader({ from, to, adults, children }) {
+  const stay = Stay.parse({ from, to });
+  if (stay.isError()) {
+    return { accommodations: [], error: stay.error.message };
+  }
+  const guests = Occupancy.of({ adults, children });
+  if (guests.isError()) {
+    return { accommodations: [], error: guests.error.message };
+  }
 
-export async function loader() {
-  return await app.dependencies.bookings.getAvailableAccommodations(searched);
+  const accommodations =
+    await app.dependencies.bookings.getAvailableAccommodations(
+      stay.value,
+      guests.value
+    );
+  return { accommodations, error: null };
 }
 
-export async function action(accommodationId) {
+export async function action(accommodationId, criteria) {
   const session = await app.run([
     login({ email: "faketenant@mail.com", password: "secret" }),
     book({
       accommodationId,
-      adults: 2,
-      children: 3,
-      from: "2024-06-02",
-      to: "2024-06-04",
+      adults: criteria.adults,
+      children: criteria.children,
+      from: criteria.from,
+      to: criteria.to,
     }),
   ]);
   return session.error
@@ -33,21 +45,35 @@ export async function action(accommodationId) {
 }
 
 function HomePage() {
-  const { accommodations, loading, refresh } = useAccommodations();
-  const [error, setError] = useState(null);
+  // useState(readCriteria) : la fonction, pas son appel. React ne l'exécute
+  // qu'une fois, au premier rendu.
+  const [criteria, setCriteria] = useState(readCriteria);
+  const { accommodations, loading, error: loaderError, refresh } =
+    useAccommodations(criteria);
+  const [actionError, setActionError] = useState(null);
+
+  const onChange = (next) => {
+    setCriteria(next);
+    writeCriteria(next);
+  };
 
   const onBook = async (accommodationId) => {
-    const { status, error } = await action(accommodationId);
+    const { status, error } = await action(accommodationId, criteria);
     if (status === "ok") {
-      setError(null);
+      setActionError(null);
       await refresh();
     } else {
-      setError(error);
+      setActionError(error);
     }
   };
 
   return (
-    <Layout loading={loading} error={error}>
+    <Layout
+      loading={loading}
+      error={actionError ?? loaderError}
+      criteria={criteria}
+      onChange={onChange}
+    >
       {accommodations.map((accommodation) => (
         <Accommodation
           key={accommodation.id}

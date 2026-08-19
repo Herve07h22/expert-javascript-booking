@@ -1,5 +1,6 @@
 import { Stay } from "../values/Stay.js";
 import { Occupancy } from "../values/Occupancy.js";
+import { canHost } from "../rules/canHost.js";
 
 export function book(payload) {
   const { accommodationId } = payload;
@@ -20,10 +21,38 @@ export function book(payload) {
       return context.withError(stay.error);
     }
 
-    // Seul invariant qui a besoin du monde extérieur : la date du jour.
+    // Premier invariant qui a besoin du monde extérieur : la date du jour.
     const today = dependencies.dateProvider.today();
     if (!stay.value.startsAfter(today)) {
       return context.withError(StayMustStartInTheFuture(today));
+    }
+
+    // Le logement existe-t-il ?
+    const accommodation = await dependencies.accommodations.findById(
+      accommodationId
+    );
+    if (!accommodation) {
+      return context.withError(UnknownAccommodation(accommodationId));
+    }
+
+    // Est-il assez grand ?
+    if (!canHost(accommodation, guests.value)) {
+      return context.withError(
+        AccommodationTooSmall(
+          accommodationId,
+          accommodation.capacity,
+          guests.value.total
+        )
+      );
+    }
+
+    // Est-il libre ? La requête filtre, la commande refuse.
+    const conflicts = await dependencies.bookings.findOverlapping(
+      accommodationId,
+      stay.value
+    );
+    if (conflicts.length > 0) {
+      return context.withError(AccommodationNotAvailable(accommodationId));
     }
 
     await dependencies.bookings.save({
@@ -42,4 +71,18 @@ export function shouldBeLogged() {
 
 export function StayMustStartInTheFuture(today) {
   return new Error(`A stay must start after ${today} (one day notice)`);
+}
+
+export function UnknownAccommodation(accommodationId) {
+  return new Error(`Unknown accommodation ${accommodationId}`);
+}
+
+export function AccommodationTooSmall(accommodationId, capacity, guests) {
+  return new Error(
+    `Accommodation ${accommodationId} hosts ${capacity} guests, not ${guests}`
+  );
+}
+
+export function AccommodationNotAvailable(accommodationId) {
+  return new Error(`Accommodation ${accommodationId} is not available`);
 }

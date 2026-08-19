@@ -1,8 +1,12 @@
-import { fakeAccommodations } from "./fakeAccommodations.js";
+import { canHost } from "../domain/rules/canHost.js";
 
 export class MemoryBookingRepository {
   _bookings = [];
-  _accommodations = fakeAccommodations;
+
+  /** Un repository qui a besoin d'un autre le reçoit ; il ne va pas le chercher. */
+  constructor(accommodations) {
+    this._accommodations = accommodations;
+  }
 
   async save(booking) {
     this._bookings.push(booking);
@@ -18,14 +22,35 @@ export class MemoryBookingRepository {
     return this._bookings.filter((booking) => booking.tenantId === tenantId);
   }
 
-  /** @param stay {import("../domain/values/Stay.js").Stay} la période recherchée */
-  async getAvailableAccommodations(stay) {
+  /**
+   * Les réservations de ce logement qui recouvrent la période.
+   * La méthode dit ce qu'elle veut, pas comment l'obtenir : en SQL, ce sera
+   * un `where` avec un index, pas un chargement de quatre ans d'historique.
+   */
+  async findOverlapping(accommodationId, stay) {
+    return this._bookings.filter(
+      (booking) =>
+        booking.accommodationId === accommodationId &&
+        booking.stay.overlaps(stay)
+    );
+  }
+
+  /**
+   * @param stay {import("../domain/values/Stay.js").Stay} la période recherchée
+   * @param occupancy {import("../domain/values/Occupancy.js").Occupancy} facultatif
+   */
+  async getAvailableAccommodations(stay, occupancy) {
     const bookedAccommodationsIds = this._bookings
       .filter((booking) => booking.stay.overlaps(stay))
       .map((booking) => booking.accommodationId);
 
-    return this._accommodations.filter(
-      (accommodation) => !bookedAccommodationsIds.includes(accommodation.id)
-    );
+    const all = await this._accommodations.all();
+    return all
+      .filter(
+        (accommodation) => !bookedAccommodationsIds.includes(accommodation.id)
+      )
+      .filter(
+        (accommodation) => !occupancy || canHost(accommodation, occupancy)
+      );
   }
 }

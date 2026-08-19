@@ -10,6 +10,7 @@ Chaque branche `step-XX` est un instantané du projet à un moment du cours.
 | `step-01` | 1 → 16 | le domaine, les commandes, les dépendances de test |
 | `step-02` | 17 → 23 | les Value Objects, le passage en monorepo |
 | `step-03` | 24 → 26 | la première page React : loader, render, action |
+| `step-04` | 27 → 29 | le bandeau de recherche, la capacité, la disponibilité |
 
 ## Installation
 

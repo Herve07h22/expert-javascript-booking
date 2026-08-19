@@ -61,3 +61,12 @@
   background: #fff1f2;
   color: #9f1239;
 }
+
+.search-bar label {
+  font-size: 0.8rem;
+  color: #717171;
+}
+
+.search-bar input[type="number"] {
+  width: 5rem;
+}

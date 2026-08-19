@@ -2,9 +2,15 @@ import { it, expect } from "vitest";
 import { App } from "../app/App.js";
 import { testDependencies } from "../../infra/testDependencies.js";
 import { login } from "../usecases/login.js";
-import { book, StayMustStartInTheFuture } from "../usecases/book.js";
+import {
+  book,
+  StayMustStartInTheFuture,
+  UnknownAccommodation,
+  AccommodationTooSmall,
+  AccommodationNotAvailable,
+} from "../usecases/book.js";
 import { Stay, StayMustLastAtLeastOneNight } from "../values/Stay.js";
-import { NeedsAtLeastOneAdult } from "../values/Occupancy.js";
+import { Occupancy, NeedsAtLeastOneAdult } from "../values/Occupancy.js";
 import { CalendarDay } from "../values/CalendarDay.js";
 
 // Notre provider de test est figé au 12 juin 2023.
@@ -172,4 +178,154 @@ it("A tenant sees the list of available accommodations", async () => {
     stay("2024-06-04", "2024-06-06")
   );
   expect(turnover.some((a) => a.id === "accommodation-1")).toBe(true);
+});
+
+it("A tenant cannot book an accommodation that does not exist", async () => {
+  const app = new App(testDependencies());
+
+  const session = await app.run([
+    login({ email: "faketenant@mail.com", password: "secret" }),
+    book({
+      accommodationId: "accommodation-42",
+      adults: 2,
+      children: 0,
+      from: "2024-06-02",
+      to: "2024-06-04",
+    }),
+  ]);
+
+  expect(session.error).toEqual(UnknownAccommodation("accommodation-42"));
+});
+
+it("A tenant cannot book an accommodation that is too small", async () => {
+  const app = new App(testDependencies());
+
+  const session = await app.run([
+    login({ email: "faketenant@mail.com", password: "secret" }),
+    book({
+      accommodationId: "accommodation-3", // capacité : 2
+      adults: 2,
+      children: 3,
+      from: "2024-06-02",
+      to: "2024-06-04",
+    }),
+  ]);
+
+  expect(session.error).toEqual(
+    AccommodationTooSmall("accommodation-3", 2, 5)
+  );
+});
+
+it("The list of available accommodations excludes those that are too small", async () => {
+  const app = new App(testDependencies());
+  const guests = Occupancy.of({ adults: 2, children: 3 }).value;
+
+  const available =
+    await app.dependencies.bookings.getAvailableAccommodations(
+      stay("2024-06-02", "2024-06-04"),
+      guests
+    );
+
+  expect(available.some((a) => a.id === "accommodation-1")).toBe(true); // capacité 8
+  expect(available.some((a) => a.id === "accommodation-3")).toBe(false); // capacité 2
+});
+
+it("A tenant cannot book an accommodation already booked", async () => {
+  const app = new App(testDependencies());
+
+  await app.run([
+    login({ email: "faketenant@mail.com", password: "secret" }),
+    book({
+      accommodationId: "accommodation-1",
+      adults: 2,
+      children: 0,
+      from: "2024-06-02",
+      to: "2024-06-04",
+    }),
+  ]);
+
+  // Cette seconde réservation recouvre la première
+  const session = await app.run([
+    login({ email: "faketenant@mail.com", password: "secret" }),
+    book({
+      accommodationId: "accommodation-1",
+      adults: 2,
+      children: 0,
+      from: "2024-06-03",
+      to: "2024-06-06",
+    }),
+  ]);
+
+  expect(session.error).toEqual(AccommodationNotAvailable("accommodation-1"));
+
+  // Ce qui compte n'est pas le message : c'est que l'état n'ait pas bougé.
+  const bookings =
+    await app.dependencies.bookings.listBookingsForAccommodationId(
+      "accommodation-1"
+    );
+  expect(bookings).toHaveLength(1);
+});
+
+it("A tenant can book the very day the previous one leaves", async () => {
+  const app = new App(testDependencies());
+
+  await app.run([
+    login({ email: "faketenant@mail.com", password: "secret" }),
+    book({
+      accommodationId: "accommodation-1",
+      adults: 2,
+      children: 0,
+      from: "2024-06-02",
+      to: "2024-06-04",
+    }),
+  ]);
+
+  const session = await app.run([
+    login({ email: "faketenant@mail.com", password: "secret" }),
+    book({
+      accommodationId: "accommodation-1",
+      adults: 2,
+      children: 0,
+      from: "2024-06-04", // arrivée le jour du départ
+      to: "2024-06-06",
+    }),
+  ]);
+
+  expect(session.error).toBeUndefined();
+});
+
+// Ce test échoue, et c'est documenté : le remède n'est pas dans le domaine,
+// mais dans l'infrastructure (chapitre 39). `it.fails` passera au rouge
+// le jour où quelqu'un le corrigera, et réclamera de devenir un `it`.
+it.fails("Two simultaneous bookings : only one is accepted", async () => {
+  const app = new App(testDependencies());
+
+  await Promise.all([
+    app.run([
+      login({ email: "faketenant@mail.com", password: "secret" }),
+      book({
+        accommodationId: "accommodation-1",
+        adults: 2,
+        children: 0,
+        from: "2024-06-02",
+        to: "2024-06-04",
+      }),
+    ]),
+    app.run([
+      login({ email: "faketenant@mail.com", password: "secret" }),
+      book({
+        accommodationId: "accommodation-1",
+        adults: 2,
+        children: 0,
+        from: "2024-06-02",
+        to: "2024-06-04",
+      }),
+    ]),
+  ]);
+
+  const bookings =
+    await app.dependencies.bookings.listBookingsForAccommodationId(
+      "accommodation-1"
+    );
+  expect(bookings).toHaveLength(1);
 });

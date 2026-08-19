@@ -6,4 +6,5 @@ export { login } from "./domain/usecases/login.js";
 export { Stay } from "./domain/values/Stay.js";
 export { CalendarDay } from "./domain/values/CalendarDay.js";
 export { Occupancy } from "./domain/values/Occupancy.js";
+export { canHost } from "./domain/rules/canHost.js";
 export { testDependencies } from "./infra/testDependencies.js";
