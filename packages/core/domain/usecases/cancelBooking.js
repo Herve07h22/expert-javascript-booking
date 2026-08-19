@@ -1,5 +1,6 @@
 import { canBeCancelled } from "../rules/canBeCancelled.js";
 import { shouldBeLogged } from "./book.js";
+import { BookingCancelled } from "../events.js";
 
 export function cancelBooking(payload) {
   const { bookingId } = payload;
@@ -28,8 +29,11 @@ export function cancelBooking(payload) {
       return context.withError(StayAlreadyStarted(bookingId));
     }
 
-    await dependencies.bookings.save(booking.cancel());
-    return context;
+    const cancelled = booking.cancel();
+    await dependencies.bookings.save(cancelled);
+    return context.withEvent(
+      BookingCancelled(cancelled, dependencies.idProvider.newId("event"))
+    );
   };
 }
 

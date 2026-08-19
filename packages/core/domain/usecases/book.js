@@ -2,6 +2,7 @@ import { Stay } from "../values/Stay.js";
 import { Occupancy } from "../values/Occupancy.js";
 import { canHost } from "../rules/canHost.js";
 import { Booking } from "../entities/Booking.js";
+import { BookingConfirmed } from "../events.js";
 
 export function book(payload) {
   const { accommodationId } = payload;
@@ -57,14 +58,18 @@ export function book(payload) {
     }
 
     const booking = Booking.confirm({
-      id: dependencies.idProvider.newId(),
+      id: dependencies.idProvider.newId("booking"),
       tenantId: user.id,
       accommodationId,
       guests: guests.value,
       stay: stay.value,
     });
     await dependencies.bookings.save(booking);
-    return context;
+
+    // La commande dit ce qui s'est passé. Elle ne se soucie pas de qui écoute.
+    return context.withEvent(
+      BookingConfirmed(booking, dependencies.idProvider.newId("event"))
+    );
   };
 }
 

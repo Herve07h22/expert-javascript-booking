@@ -5,7 +5,14 @@ import { MemorySessionRepository } from "./MemorySessionRepository.js";
 import { MemoryQueries } from "./MemoryQueries.js";
 import { testPasswordHasher } from "./testPasswordHasher.js";
 import { testIdProvider } from "./testIdProvider.js";
+import { MemoryNotifications } from "./MemoryNotifications.js";
 import { CalendarDay } from "../domain/values/CalendarDay.js";
+
+// Un logger silencieux : un test ne doit pas écrire dans la console.
+export const testLogger = {
+  info: () => {},
+  error: () => {},
+};
 
 // Tous nos tests s'exécutent indéfiniment le 12 juin 2023.
 export const testDateProvider = {
@@ -24,5 +31,7 @@ export const testDependencies = () => {
     dateProvider: testDateProvider,
     idProvider: testIdProvider(),
     passwords: testPasswordHasher,
+    notifications: new MemoryNotifications(),
+    logger: testLogger,
   };
 };

@@ -1,9 +1,12 @@
+// `hostId` référence un utilisateur : c'est une clé étrangère, produite
+// par le besoin (prévenir le propriétaire) et non par un schéma dessiné à l'avance.
 // Des données volontairement variées : des jeux d'essai tous identiques
 // masquent la moitié des bugs d'affichage.
 // Le `seed` dans l'URL de picsum évite que l'image change à chaque rechargement.
 export const fakeAccommodations = [
   {
     id: "accommodation-1",
+    hostId: "host-1",
     name: "Villa 6 pièces avec piscine",
     location: "Saint-Rémy-de-Provence",
     host: "Claire Vasseur",
@@ -13,6 +16,7 @@ export const fakeAccommodations = [
   },
   {
     id: "accommodation-2",
+    hostId: "host-1",
     name: "Mas provençal rénové",
     location: "Gordes",
     host: "Claire Vasseur",
@@ -22,6 +26,7 @@ export const fakeAccommodations = [
   },
   {
     id: "accommodation-3",
+    hostId: "host-2",
     name: "Studio vue mer",
     location: "Cassis",
     host: "Yanis Brahimi",
@@ -31,6 +36,7 @@ export const fakeAccommodations = [
   },
   {
     id: "accommodation-4",
+    hostId: "host-2",
     name: "Chalet en bord de piste",
     location: "Le Grand-Bornand",
     host: "Yanis Brahimi",
@@ -40,6 +46,7 @@ export const fakeAccommodations = [
   },
   {
     id: "accommodation-5",
+    hostId: "host-3",
     name: "Gîte au calme",
     location: "Sciotot",
     host: "Marek Nowak",
@@ -49,6 +56,7 @@ export const fakeAccommodations = [
   },
   {
     id: "accommodation-6",
+    hostId: "host-3",
     name: "Loft d'architecte",
     location: "Bordeaux",
     host: "Marek Nowak",

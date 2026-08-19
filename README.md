@@ -12,6 +12,7 @@ Chaque branche `step-XX` est un instantané du projet à un moment du cours.
 | `step-03` | 24 → 26 | la première page React : loader, render, action |
 | `step-04` | 27 → 29 | le bandeau de recherche, la capacité, la disponibilité |
 | `step-05` | 30 → 33 | la session, l'écran de connexion, mes réservations, l'annulation |
+| `step-06` | 34 → 35 | le port de notification et les événements de domaine |
 
 ## Installation
 

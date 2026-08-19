@@ -16,4 +16,7 @@ export { Booking, bookingStatus } from "./domain/entities/Booking.js";
 export { canHost } from "./domain/rules/canHost.js";
 export { canBeCancelled } from "./domain/rules/canBeCancelled.js";
 
+export { BookingConfirmed, BookingCancelled } from "./domain/events.js";
+
 export { testDependencies } from "./infra/testDependencies.js";
+export { subscribers } from "./infra/subscribers.js";

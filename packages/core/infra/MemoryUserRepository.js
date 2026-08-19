@@ -10,6 +10,11 @@ export class MemoryUserRepository {
       email: "otherguest@mail.com",
       hashedPassword: "hashed:secret",
     },
+    // Le propriétaire est un utilisateur de la plateforme, pas une mention
+    // sur une fiche : il signe un contrat et touchera une commission.
+    { id: "host-1", email: "claire@mail.com", hashedPassword: "hashed:secret" },
+    { id: "host-2", email: "yanis@mail.com", hashedPassword: "hashed:secret" },
+    { id: "host-3", email: "marek@mail.com", hashedPassword: "hashed:secret" },
   ];
 
   async findByEmail(email) {
