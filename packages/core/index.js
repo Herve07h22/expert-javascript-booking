@@ -1,6 +1,8 @@
 // La façade publique du domaine.
 // Tout ce qui ne figure pas ici reste privé, et pourra être renommé sans prévenir.
 export { App } from "./domain/app/App.js";
+export { Context } from "./domain/app/Context.js";
+export { Rollback } from "./domain/app/Rollback.js";
 
 export { book } from "./domain/usecases/book.js";
 export { login } from "./domain/usecases/login.js";
@@ -16,8 +18,13 @@ export { Booking, bookingStatus } from "./domain/entities/Booking.js";
 export { canHost } from "./domain/rules/canHost.js";
 export { canBeCancelled } from "./domain/rules/canBeCancelled.js";
 
+export { DomainError, isDomainError } from "./domain/errors.js";
+export * from "./domain/errorCodes.js";
 export { BookingConfirmed, BookingCancelled } from "./domain/events.js";
 
+// Les implémentations en mémoire : elles n'ont aucune dépendance,
+// elles font tourner les tests et permettent une démo sans base de données.
 export { testDependencies } from "./infra/testDependencies.js";
 export { subscribers } from "./infra/subscribers.js";
-export { productionDependencies } from "./infra/productionDependencies.js";
+export { systemDateProvider } from "./infra/systemDateProvider.js";
+export { MemoryUnitOfWork } from "./infra/MemoryUnitOfWork.js";

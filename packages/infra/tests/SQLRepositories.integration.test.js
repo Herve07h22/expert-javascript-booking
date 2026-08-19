@@ -1,13 +1,16 @@
 import { describe, beforeAll, afterAll, beforeEach, it, expect } from "vitest";
-import { bookingRepositoryContract } from "./contracts/bookingRepository.contract.js";
-import { userRepositoryContract } from "./contracts/userRepository.contract.js";
+import { bookingRepositoryContract } from "@booking/core/tests/contracts/bookingRepository.contract.js";
+import { userRepositoryContract } from "@booking/core/tests/contracts/userRepository.contract.js";
 import { testDatabase } from "./testDatabase.js";
-import { SQLBookingRepository } from "../infra/SQLBookingRepository.js";
-import { SQLUserRepository } from "../infra/SQLUserRepository.js";
-import { Booking, bookingStatus } from "../domain/entities/Booking.js";
-import { Stay } from "../domain/values/Stay.js";
-import { Occupancy } from "../domain/values/Occupancy.js";
-import { AccommodationNotAvailable } from "../domain/usecases/book.js";
+import { SQLBookingRepository } from "../src/SQLBookingRepository.js";
+import { SQLUserRepository } from "../src/SQLUserRepository.js";
+import {
+  Booking,
+  bookingStatus,
+  Stay,
+  Occupancy,
+  AccommodationNotAvailable,
+} from "@booking/core";
 
 // Sans base, la suite ne ment pas : elle dit qu'elle n'a rien vérifié.
 const withDatabase = process.env.TEST_DATABASE_URL ? describe : describe.skip;

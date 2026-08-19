@@ -1,4 +1,4 @@
-import { Rollback } from "./Rollback.js";
+import { Rollback } from "../domain/app/Rollback.js";
 
 /**
  * En mémoire, il n'y a rien à valider ni à annuler. Mais il y a mieux à faire

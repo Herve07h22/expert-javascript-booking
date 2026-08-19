@@ -1,48 +1,48 @@
-import { useState } from "react";
-import { login, logout } from "@booking/core";
-import { app } from "../domain";
+import { useState, useEffect } from "react";
+import { api } from "../api";
+import { toMessage } from "../errorMessages";
 
-// Pis-aller assumé et TEMPORAIRE : localStorage est lisible par tout le
-// JavaScript de la page. Dès qu'il y a un vrai serveur, le jeton part dans
-// un cookie HttpOnly, et le frontend ne le voit plus jamais (chapitre 40).
-const STORAGE_KEY = "session";
-
-function readStoredSession() {
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : null;
-}
-
-function storeSession(session) {
-  if (session) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  else window.localStorage.removeItem(STORAGE_KEY);
-}
-
+/**
+ * Le jeton vit désormais dans un cookie HttpOnly : le frontend ne le voit
+ * jamais. Il demande au serveur qui il est.
+ */
 export function useSession() {
-  const [session, setSession] = useState(readStoredSession);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
 
-  // Le mot de passe entre ici, part dans la commande, et n'est rangé nulle part.
+  useEffect(() => {
+    let obsolete = false;
+    api
+      .me()
+      .then(({ data }) => !obsolete && setCurrentUser(data))
+      .catch(() => {}) // 401 au démarrage : simplement pas connecté
+      .finally(() => !obsolete && setReady(true));
+    return () => {
+      obsolete = true;
+    };
+  }, []);
+
+  // Le mot de passe entre ici, part dans la requête, et n'est rangé nulle part.
   const logIn = async ({ email, password }) => {
     setPending(true);
-    const context = await app.run([login({ email, password })]);
-    const result = context.session();
-    setPending(false);
-
-    if (result.error) {
-      setError(result.error);
-      return;
+    try {
+      const { data } = await api.logIn({ email, password });
+      setError(null);
+      setCurrentUser(data);
+    } catch (apiError) {
+      setError(toMessage(apiError));
+    } finally {
+      setPending(false);
     }
-    setError(null);
-    setSession(result);
-    storeSession(result);
   };
 
   const logOut = async () => {
-    if (session) await app.run([logout(session.token)]);
-    setSession(null);
-    storeSession(null);
+    // Effacer le ticket ne suffit pas : il faut le faire annuler au vestiaire.
+    await api.logOut().catch(() => {});
+    setCurrentUser(null);
   };
 
-  return { session, error, pending, logIn, logOut };
+  return { currentUser, ready, error, pending, logIn, logOut };
 }

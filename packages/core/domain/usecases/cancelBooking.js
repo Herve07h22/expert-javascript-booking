@@ -1,5 +1,10 @@
+import {
+  shouldBeLogged,
+  UnknownBooking,
+  BookingAlreadyCancelled,
+  StayAlreadyStarted,
+} from "../errorCodes.js";
 import { canBeCancelled } from "../rules/canBeCancelled.js";
-import { shouldBeLogged } from "./book.js";
 import { BookingCancelled } from "../events.js";
 
 export function cancelBooking(payload) {
@@ -37,14 +42,5 @@ export function cancelBooking(payload) {
   };
 }
 
-export function UnknownBooking(bookingId) {
-  return new Error(`Unknown booking ${bookingId}`);
-}
 
-export function BookingAlreadyCancelled(bookingId) {
-  return new Error(`Booking ${bookingId} is already cancelled`);
-}
 
-export function StayAlreadyStarted(bookingId) {
-  return new Error(`Booking ${bookingId} has already started`);
-}

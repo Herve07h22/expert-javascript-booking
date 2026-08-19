@@ -1,3 +1,4 @@
+import { NeedsAtLeastOneAdult, InvalidChildrenCount } from "../errorCodes.js";
 import { Result } from "./Result.js";
 
 /**
@@ -43,10 +44,4 @@ export class Occupancy {
   }
 }
 
-export function NeedsAtLeastOneAdult(adults) {
-  return new Error(`A booking needs at least one adult (got ${adults})`);
-}
 
-export function InvalidChildrenCount(children) {
-  return new Error(`Invalid number of children (got ${children})`);
-}

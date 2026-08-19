@@ -4,12 +4,12 @@ import { testDependencies } from "../../infra/testDependencies.js";
 import { login } from "../usecases/login.js";
 import { authenticate } from "../usecases/authenticate.js";
 import { book } from "../usecases/book.js";
+import { cancelBooking } from "../usecases/cancelBooking.js";
 import {
-  cancelBooking,
   UnknownBooking,
   BookingAlreadyCancelled,
   StayAlreadyStarted,
-} from "../usecases/cancelBooking.js";
+} from "../errorCodes.js";
 import { listMyBookings } from "../usecases/listMyBookings.js";
 import { bookingStatus } from "../entities/Booking.js";
 import { Stay } from "../values/Stay.js";
@@ -75,7 +75,7 @@ it("A tenant cannot cancel someone else's booking", async () => {
   ]);
 
   // On ne confirme pas l'existence d'une ressource à qui n'y a pas droit.
-  expect(other.error).toEqual(UnknownBooking("booking-1"));
+  expect(other.error.code).toBe(UnknownBooking("booking-1").code);
 });
 
 it("A tenant cannot cancel twice", async () => {
@@ -91,7 +91,7 @@ it("A tenant cannot cancel twice", async () => {
     cancelBooking({ bookingId: "booking-1" }),
   ]);
 
-  expect(twice.error).toEqual(BookingAlreadyCancelled("booking-1"));
+  expect(twice.error.code).toBe(BookingAlreadyCancelled("booking-1").code);
 });
 
 it("A tenant cannot cancel a stay that has already started", async () => {
@@ -106,7 +106,7 @@ it("A tenant cannot cancel a stay that has already started", async () => {
     authenticate(session.token),
     cancelBooking({ bookingId: "booking-1" }),
   ]);
-  expect(late.error).toEqual(StayAlreadyStarted("booking-1"));
+  expect(late.error.code).toBe(StayAlreadyStarted("booking-1").code);
 });
 
 it("A tenant lists their own bookings, with everything the screen needs", async () => {
@@ -141,6 +141,6 @@ it("An anonymous visitor lists nothing", async () => {
   const app = new App(testDependencies());
   const context = await app.run([listMyBookings()]);
 
-  expect(context.error).toEqual(new Error("User should be logged in"));
+  expect(context.error.code).toBe("SHOULD_BE_LOGGED");
   expect(context.data).toBeUndefined();
 });

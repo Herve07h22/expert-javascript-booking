@@ -1,3 +1,4 @@
+import { InvalidCredentials } from "../errorCodes.js";
 export function login(payload) {
   const { email, password } = payload;
   return async function (dependencies, context) {
@@ -19,11 +20,3 @@ export function login(payload) {
   };
 }
 
-/**
- * Un seul message pour les deux cas.
- * Deux messages distincts permettent de tester si une adresse est inscrite
- * sur la plateforme : c'est déjà une information qui ne vous appartient pas.
- */
-export function InvalidCredentials() {
-  return new Error("Invalid email or password");
-}

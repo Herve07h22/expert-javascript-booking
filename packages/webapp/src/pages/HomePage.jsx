@@ -1,48 +1,13 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { authenticate, book, Stay, Occupancy } from "@booking/core";
-import { app } from "../domain";
 import { Layout } from "../components/Layout";
 import { Accommodation } from "../components/Accommodation";
 import { useAccommodations } from "../hooks/useAccommodations";
 import { readCriteria, writeCriteria } from "../criteria";
+import { api } from "../api";
+import { toMessage } from "../errorMessages";
 
-// Le loader reçoit des chaînes venues d'un humain : il peut échouer.
-// Aucune règle n'est réécrite ici, Stay et Occupancy les portent déjà.
-export async function loader({ from, to, adults, children }) {
-  const stay = Stay.parse({ from, to });
-  if (stay.isError()) {
-    return { accommodations: [], error: stay.error.message };
-  }
-  const guests = Occupancy.of({ adults, children });
-  if (guests.isError()) {
-    return { accommodations: [], error: guests.error.message };
-  }
-
-  const accommodations =
-    await app.dependencies.bookings.getAvailableAccommodations(
-      stay.value,
-      guests.value
-    );
-  return { accommodations, error: null };
-}
-
-export async function action(session, accommodationId, criteria) {
-  const context = await app.run([
-    authenticate(session.token),
-    book({
-      accommodationId,
-      adults: criteria.adults,
-      children: criteria.children,
-      from: criteria.from,
-      to: criteria.to,
-    }),
-  ]);
-  return context.session();
-}
-
-function HomePage({ session, onLogOut, navigate }) {
-  // useState(readCriteria) : la fonction, pas son appel.
+function HomePage({ currentUser, onLogOut, navigate }) {
   const [criteria, setCriteria] = useState(readCriteria);
   const {
     accommodations,
@@ -60,19 +25,24 @@ function HomePage({ session, onLogOut, navigate }) {
 
   const onBook = async (accommodationId) => {
     setBooking(accommodationId);
-    const result = await action(session, accommodationId, criteria);
-    setBooking(null);
-
-    if (result.error === "Invalid or expired session") {
+    try {
+      await api.book({ accommodationId, ...criteria });
+      setActionError(null);
+      await refresh();
+    } catch (error) {
       // La session a expiré entre l'affichage et le clic.
-      return onLogOut();
+      if (error.status === 401) return onLogOut();
+
+      // Le seul cas où l'erreur nous apprend que l'ÉCRAN est périmé.
+      if (error.code === "ACCOMMODATION_NOT_AVAILABLE") {
+        setActionError(toMessage(error));
+        await refresh();
+        return;
+      }
+      setActionError(toMessage(error));
+    } finally {
+      setBooking(null);
     }
-    if (result.error) {
-      setActionError(result.error);
-      return;
-    }
-    setActionError(null);
-    await refresh();
   };
 
   return (
@@ -81,7 +51,7 @@ function HomePage({ session, onLogOut, navigate }) {
       error={actionError ?? loaderError}
       criteria={criteria}
       onChange={onChange}
-      currentUser={session.currentUser}
+      currentUser={currentUser}
       onLogOut={onLogOut}
       navigate={navigate}
     >
@@ -104,7 +74,7 @@ function HomePage({ session, onLogOut, navigate }) {
 }
 
 HomePage.propTypes = {
-  session: PropTypes.object.isRequired,
+  currentUser: PropTypes.object.isRequired,
   onLogOut: PropTypes.func.isRequired,
   navigate: PropTypes.func.isRequired,
 };

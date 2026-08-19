@@ -2,15 +2,17 @@ import { it, expect } from "vitest";
 import { App } from "../app/App.js";
 import { testDependencies } from "../../infra/testDependencies.js";
 import { login } from "../usecases/login.js";
+import { book } from "../usecases/book.js";
 import {
-  book,
   StayMustStartInTheFuture,
   UnknownAccommodation,
   AccommodationTooSmall,
   AccommodationNotAvailable,
-} from "../usecases/book.js";
-import { Stay, StayMustLastAtLeastOneNight } from "../values/Stay.js";
-import { Occupancy, NeedsAtLeastOneAdult } from "../values/Occupancy.js";
+  NeedsAtLeastOneAdult,
+  StayMustLastAtLeastOneNight,
+} from "../errorCodes.js";
+import { Stay } from "../values/Stay.js";
+import { Occupancy } from "../values/Occupancy.js";
 import { CalendarDay } from "../values/CalendarDay.js";
 
 // Notre provider de test est figé au 12 juin 2023.
@@ -57,7 +59,7 @@ it("A tenant cannot book an accommodation in the past", async () => {
     }),
   ]);
 
-  expect(session.error).toEqual(StayMustStartInTheFuture(today));
+  expect(session.error.code).toBe(StayMustStartInTheFuture(today).code);
 });
 
 it("A tenant cannot book for the very same day : one day notice", async () => {
@@ -74,7 +76,7 @@ it("A tenant cannot book for the very same day : one day notice", async () => {
     }),
   ]);
 
-  expect(session.error).toEqual(StayMustStartInTheFuture(today));
+  expect(session.error.code).toBe(StayMustStartInTheFuture(today).code);
 });
 
 it("A stay must last at least one night", async () => {
@@ -113,7 +115,7 @@ it("A booking needs at least one adult", async () => {
     }),
   ]);
 
-  expect(session.error).toEqual(NeedsAtLeastOneAdult(0));
+  expect(session.error.code).toBe(NeedsAtLeastOneAdult(0).code);
 });
 
 it("An anonymous visitor cannot book", async () => {
@@ -129,7 +131,7 @@ it("An anonymous visitor cannot book", async () => {
     }),
   ]);
 
-  expect(session.error).toEqual(new Error("User should be logged in"));
+  expect(session.error.code).toBe("SHOULD_BE_LOGGED");
   const bookings =
     await app.dependencies.bookings.listBookingsForAccommodationId(
       "accommodation-1"
@@ -194,7 +196,7 @@ it("A tenant cannot book an accommodation that does not exist", async () => {
     }),
   ]);
 
-  expect(session.error).toEqual(UnknownAccommodation("accommodation-42"));
+  expect(session.error.code).toBe(UnknownAccommodation("accommodation-42").code);
 });
 
 it("A tenant cannot book an accommodation that is too small", async () => {
@@ -256,7 +258,7 @@ it("A tenant cannot book an accommodation already booked", async () => {
     }),
   ]);
 
-  expect(session.error).toEqual(AccommodationNotAvailable("accommodation-1"));
+  expect(session.error.code).toBe(AccommodationNotAvailable("accommodation-1").code);
 
   // Ce qui compte n'est pas le message : c'est que l'état n'ait pas bougé.
   const bookings =

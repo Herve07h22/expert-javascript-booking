@@ -1,3 +1,4 @@
+import { InvalidSession } from "../errorCodes.js";
 /** La symétrique de login : elle remplit le contexte à partir d'un jeton. */
 export function authenticate(token) {
   return async function (dependencies, context) {
@@ -17,6 +18,3 @@ export function authenticate(token) {
   };
 }
 
-export function InvalidSession() {
-  return new Error("Invalid or expired session");
-}

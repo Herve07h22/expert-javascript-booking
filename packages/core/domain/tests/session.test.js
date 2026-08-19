@@ -1,8 +1,10 @@
 import { it, expect } from "vitest";
 import { App } from "../app/App.js";
 import { testDependencies } from "../../infra/testDependencies.js";
-import { login, InvalidCredentials } from "../usecases/login.js";
-import { authenticate, InvalidSession } from "../usecases/authenticate.js";
+import { login } from "../usecases/login.js";
+import { InvalidCredentials } from "../errorCodes.js";
+import { authenticate } from "../usecases/authenticate.js";
+import { InvalidSession } from "../errorCodes.js";
 import { logout } from "../usecases/logout.js";
 import { book } from "../usecases/book.js";
 
@@ -42,7 +44,7 @@ it("An invalid token books nothing", async () => {
     book(aBooking),
   ]);
 
-  expect(session.error).toEqual(InvalidSession());
+  expect(session.error.code).toBe(InvalidSession().code);
   // Le fusible du chapitre 13 : book() n'a même pas été exécutée.
   const bookings = await app.dependencies.bookings.listBookingsForTenantId(
     "tenant-1"
@@ -60,8 +62,8 @@ it("A wrong password and an unknown email give the very same error", async () =>
     login({ email: "faketenant@mail.com", password: "oups" }),
   ]);
 
-  expect(unknown.error).toEqual(InvalidCredentials());
-  expect(wrong.error).toEqual(InvalidCredentials());
+  expect(unknown.error.code).toBe(InvalidCredentials().code);
+  expect(wrong.error.code).toBe(InvalidCredentials().code);
 });
 
 it("Logging out invalidates the token on the server", async () => {
@@ -73,7 +75,7 @@ it("Logging out invalidates the token on the server", async () => {
   await app.run([logout(logged.token)]);
 
   const session = await app.run([authenticate(logged.token), book(aBooking)]);
-  expect(session.error).toEqual(InvalidSession());
+  expect(session.error.code).toBe(InvalidSession().code);
 });
 
 it("What leaves the domain never carries the hashed password", async () => {

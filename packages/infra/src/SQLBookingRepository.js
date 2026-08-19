@@ -1,7 +1,9 @@
-import { Booking } from "../domain/entities/Booking.js";
-import { Stay } from "../domain/values/Stay.js";
-import { Occupancy } from "../domain/values/Occupancy.js";
-import { AccommodationNotAvailable } from "../domain/usecases/book.js";
+import {
+  Booking,
+  Stay,
+  Occupancy,
+  AccommodationNotAvailable,
+} from "@booking/core";
 
 const EXCLUSION_VIOLATION = "23P01";
 

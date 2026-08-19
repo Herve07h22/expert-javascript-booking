@@ -1,5 +1,5 @@
 import { Context } from "./Context.js";
-import { Rollback } from "../../infra/Rollback.js";
+import { Rollback } from "./Rollback.js";
 
 export class App {
   constructor(dependencies, subscribers = {}) {

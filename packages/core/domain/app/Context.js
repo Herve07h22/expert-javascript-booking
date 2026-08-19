@@ -38,7 +38,9 @@ export class Context {
   session() {
     return {
       token: this.token ?? null,
-      error: this.error ? this.error.message : null,
+      error: this.error
+        ? { code: this.error.code ?? "INTERNAL_ERROR", details: this.error.details ?? {} }
+        : null,
       currentUser: this.loggedUser
         ? { id: this.loggedUser.id, email: this.loggedUser.email }
         : null,

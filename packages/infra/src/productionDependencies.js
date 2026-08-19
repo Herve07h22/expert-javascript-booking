@@ -8,7 +8,7 @@ import { SQLQueries } from "./SQLQueries.js";
 import { SQLUnitOfWork } from "./SQLUnitOfWork.js";
 import { EmailNotifications } from "./EmailNotifications.js";
 import { scryptPasswordHasher } from "./scryptPasswordHasher.js";
-import { systemDateProvider } from "./systemDateProvider.js";
+import { systemDateProvider } from "@booking/core";
 import { uuidProvider } from "./uuidProvider.js";
 
 /**

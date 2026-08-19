@@ -1,3 +1,10 @@
+import {
+  shouldBeLogged,
+  StayMustStartInTheFuture,
+  UnknownAccommodation,
+  AccommodationTooSmall,
+  AccommodationNotAvailable,
+} from "../errorCodes.js";
 import { Stay } from "../values/Stay.js";
 import { Occupancy } from "../values/Occupancy.js";
 import { canHost } from "../rules/canHost.js";
@@ -73,24 +80,7 @@ export function book(payload) {
   };
 }
 
-export function shouldBeLogged() {
-  return new Error("User should be logged in");
-}
 
-export function StayMustStartInTheFuture(today) {
-  return new Error(`A stay must start after ${today} (one day notice)`);
-}
 
-export function UnknownAccommodation(accommodationId) {
-  return new Error(`Unknown accommodation ${accommodationId}`);
-}
 
-export function AccommodationTooSmall(accommodationId, capacity, guests) {
-  return new Error(
-    `Accommodation ${accommodationId} hosts ${capacity} guests, not ${guests}`
-  );
-}
 
-export function AccommodationNotAvailable(accommodationId) {
-  return new Error(`Accommodation ${accommodationId} is not available`);
-}

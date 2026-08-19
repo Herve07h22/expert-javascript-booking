@@ -1,40 +1,33 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { authenticate, cancelBooking } from "@booking/core";
-import { app } from "../domain";
 import { Layout } from "../components/Layout";
 import { Link } from "../components/Link";
 import { useMyBookings } from "../hooks/useMyBookings";
 import { formatDay, formatPrice } from "../format";
+import { api } from "../api";
+import { toMessage } from "../errorMessages";
 import "./MyBookingsPage.css";
 
-export async function cancelAction(session, bookingId) {
-  const context = await app.run([
-    authenticate(session.token),
-    cancelBooking({ bookingId }),
-  ]);
-  return context.session();
-}
-
-function MyBookingsPage({ session, onLogOut, navigate }) {
-  const { bookings, loading, error, refresh } = useMyBookings(session);
+function MyBookingsPage({ currentUser, onLogOut, navigate }) {
+  const { bookings, loading, error, refresh } = useMyBookings();
   const [actionError, setActionError] = useState(null);
 
   const onCancel = async (bookingId) => {
-    const result = await cancelAction(session, bookingId);
-    if (result.error) {
-      setActionError(result.error);
-      return;
+    try {
+      await api.cancel(bookingId);
+      setActionError(null);
+      await refresh();
+    } catch (apiError) {
+      if (apiError.status === 401) return onLogOut();
+      setActionError(toMessage(apiError));
     }
-    setActionError(null);
-    await refresh();
   };
 
   return (
     <Layout
       loading={loading}
       error={actionError ?? error}
-      currentUser={session.currentUser}
+      currentUser={currentUser}
       onLogOut={onLogOut}
       navigate={navigate}
     >
@@ -83,7 +76,7 @@ function MyBookingsPage({ session, onLogOut, navigate }) {
 }
 
 MyBookingsPage.propTypes = {
-  session: PropTypes.object.isRequired,
+  currentUser: PropTypes.object.isRequired,
   onLogOut: PropTypes.func.isRequired,
   navigate: PropTypes.func.isRequired,
 };

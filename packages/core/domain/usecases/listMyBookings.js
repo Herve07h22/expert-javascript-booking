@@ -1,4 +1,4 @@
-import { shouldBeLogged } from "./book.js";
+import { shouldBeLogged } from "../errorCodes.js";
 
 /**
  * Une requête privée passe par le même péage que les commandes.

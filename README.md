@@ -14,6 +14,7 @@ Chaque branche `step-XX` est un instantané du projet à un moment du cours.
 | `step-05` | 30 → 33 | la session, l'écran de connexion, mes réservations, l'annulation |
 | `step-06` | 34 → 35 | le port de notification et les événements de domaine |
 | `step-07` | 36 → 39 | PostgreSQL, le repository SQL, les tests de contrat, la transaction |
+| `step-08` | 40 → 42 | l'API HTTP, le front qui parle au back, les erreurs codées |
 
 ## Installation
 
@@ -44,10 +45,33 @@ second `yarn.lock`, et `@booking/core` resterait introuvable.
 
 ## Lancer l'application
 
+Jusqu'à `step-07`, le domaine s'exécute dans le navigateur :
+
 ```bash
-cd packages/webapp
-yarn dev
+yarn workspace @booking/webapp dev
 ```
+
+À partir de `step-08`, il est passé derrière une API. Deux processus :
+
+```bash
+DATABASE_URL=postgres://postgres:secret@localhost:55432/booking_test \
+PUBLIC_URL=http://localhost:5173 SMTP_URL=log:// \
+  yarn workspace @booking/api start
+
+yarn workspace @booking/webapp dev   # Vite relaie /api vers le port 3000
+```
+
+## Organisation
+
+```
+packages/core     le domaine. AUCUNE dépendance : il s'exécute partout.
+packages/infra    les adaptateurs réels : PostgreSQL, mail, hachage.
+packages/api      le serveur HTTP.
+packages/webapp   React. Dépend de core, jamais de infra.
+```
+
+`webapp` ne déclare pas `infra` dans ses dépendances : aucun import ne peut y
+remonter, même par accident, même dans six mois.
 
 ## Deux écarts avec le texte du cours
 

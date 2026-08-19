@@ -1,3 +1,4 @@
+import { StayMustLastAtLeastOneNight } from "../errorCodes.js";
 import { Result } from "./Result.js";
 import { CalendarDay } from "./CalendarDay.js";
 
@@ -61,8 +62,3 @@ export class Stay {
   }
 }
 
-export function StayMustLastAtLeastOneNight(from, to) {
-  return new Error(
-    `A stay must last at least one night (from ${from} to ${to})`
-  );
-}

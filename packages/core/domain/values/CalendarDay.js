@@ -1,3 +1,4 @@
+import { NotACalendarDay } from "../errorCodes.js";
 import { Result } from "./Result.js";
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -57,8 +58,3 @@ export class CalendarDay {
   }
 }
 
-export function NotACalendarDay(value) {
-  return new Error(
-    `Not a calendar day (expected "YYYY-MM-DD") : ${String(value)}`
-  );
-}

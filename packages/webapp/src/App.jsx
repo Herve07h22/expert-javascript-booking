@@ -6,16 +6,18 @@ import HomePage from "./pages/HomePage";
 import MyBookingsPage from "./pages/MyBookingsPage";
 
 function App() {
-  const { session, error, pending, logIn, logOut } = useSession();
+  const { currentUser, ready, error, pending, logIn, logOut } = useSession();
   const [path, navigate] = useRouter();
 
-  // L'affichage est une fonction de l'état. Notre application en a deux :
-  // connecté, ou non.
-  if (!session) {
+  // Tant qu'on ne sait pas qui est l'utilisateur, on n'affiche pas un écran
+  // de connexion à quelqu'un qui est déjà connecté.
+  if (!ready) return <div className="loading">Chargement…</div>;
+
+  if (!currentUser) {
     return <LoginPage onSubmit={logIn} error={error} pending={pending} />;
   }
 
-  const page = { session, onLogOut: logOut, navigate };
+  const page = { currentUser, onLogOut: logOut, navigate };
 
   return path === "/bookings" ? (
     <MyBookingsPage {...page} />
