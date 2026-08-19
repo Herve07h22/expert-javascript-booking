@@ -70,3 +70,28 @@
 .search-bar input[type="number"] {
   width: 5rem;
 }
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.nav-spacer {
+  flex: 1;
+}
+
+.nav-user {
+  color: #717171;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  color: #ff385c;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}

@@ -8,8 +8,15 @@ export class MemoryBookingRepository {
     this._accommodations = accommodations;
   }
 
+  /** Un upsert : le repository enregistre des états, pas seulement des créations. */
   async save(booking) {
-    this._bookings.push(booking);
+    const index = this._bookings.findIndex((b) => b.id === booking.id);
+    if (index === -1) this._bookings.push(booking);
+    else this._bookings[index] = booking;
+  }
+
+  async findById(id) {
+    return this._bookings.find((booking) => booking.id === id) ?? null;
   }
 
   async listBookingsForAccommodationId(accommodationId) {
@@ -22,26 +29,18 @@ export class MemoryBookingRepository {
     return this._bookings.filter((booking) => booking.tenantId === tenantId);
   }
 
-  /**
-   * Les réservations de ce logement qui recouvrent la période.
-   * La méthode dit ce qu'elle veut, pas comment l'obtenir : en SQL, ce sera
-   * un `where` avec un index, pas un chargement de quatre ans d'historique.
-   */
   async findOverlapping(accommodationId, stay) {
     return this._bookings.filter(
       (booking) =>
+        booking.isActive() &&
         booking.accommodationId === accommodationId &&
         booking.stay.overlaps(stay)
     );
   }
 
-  /**
-   * @param stay {import("../domain/values/Stay.js").Stay} la période recherchée
-   * @param occupancy {import("../domain/values/Occupancy.js").Occupancy} facultatif
-   */
   async getAvailableAccommodations(stay, occupancy) {
     const bookedAccommodationsIds = this._bookings
-      .filter((booking) => booking.stay.overlaps(stay))
+      .filter((booking) => booking.isActive() && booking.stay.overlaps(stay))
       .map((booking) => booking.accommodationId);
 
     const all = await this._accommodations.all();

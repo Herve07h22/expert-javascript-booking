@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { App, book, login, testDependencies, Stay, Occupancy } from "@booking/core";
+import PropTypes from "prop-types";
+import { authenticate, book, Stay, Occupancy } from "@booking/core";
+import { app } from "../domain";
 import { Layout } from "../components/Layout";
 import { Accommodation } from "../components/Accommodation";
 import { useAccommodations } from "../hooks/useAccommodations";
 import { readCriteria, writeCriteria } from "../criteria";
-
-// L'application est initialisée une seule fois, dans le module.
-const app = new App(testDependencies());
 
 // Le loader reçoit des chaînes venues d'un humain : il peut échouer.
 // Aucune règle n'est réécrite ici, Stay et Occupancy les portent déjà.
@@ -28,9 +27,9 @@ export async function loader({ from, to, adults, children }) {
   return { accommodations, error: null };
 }
 
-export async function action(accommodationId, criteria) {
-  const session = await app.run([
-    login({ email: "faketenant@mail.com", password: "secret" }),
+export async function action(session, accommodationId, criteria) {
+  const context = await app.run([
+    authenticate(session.token),
     book({
       accommodationId,
       adults: criteria.adults,
@@ -39,18 +38,20 @@ export async function action(accommodationId, criteria) {
       to: criteria.to,
     }),
   ]);
-  return session.error
-    ? { status: "error", error: session.error.message }
-    : { status: "ok" };
+  return context.session();
 }
 
-function HomePage() {
-  // useState(readCriteria) : la fonction, pas son appel. React ne l'exécute
-  // qu'une fois, au premier rendu.
+function HomePage({ session, onLogOut, navigate }) {
+  // useState(readCriteria) : la fonction, pas son appel.
   const [criteria, setCriteria] = useState(readCriteria);
-  const { accommodations, loading, error: loaderError, refresh } =
-    useAccommodations(criteria);
+  const {
+    accommodations,
+    loading,
+    error: loaderError,
+    refresh,
+  } = useAccommodations(criteria);
   const [actionError, setActionError] = useState(null);
+  const [booking, setBooking] = useState(null);
 
   const onChange = (next) => {
     setCriteria(next);
@@ -58,13 +59,20 @@ function HomePage() {
   };
 
   const onBook = async (accommodationId) => {
-    const { status, error } = await action(accommodationId, criteria);
-    if (status === "ok") {
-      setActionError(null);
-      await refresh();
-    } else {
-      setActionError(error);
+    setBooking(accommodationId);
+    const result = await action(session, accommodationId, criteria);
+    setBooking(null);
+
+    if (result.error === "Invalid or expired session") {
+      // La session a expiré entre l'affichage et le clic.
+      return onLogOut();
     }
+    if (result.error) {
+      setActionError(result.error);
+      return;
+    }
+    setActionError(null);
+    await refresh();
   };
 
   return (
@@ -73,16 +81,32 @@ function HomePage() {
       error={actionError ?? loaderError}
       criteria={criteria}
       onChange={onChange}
+      currentUser={session.currentUser}
+      onLogOut={onLogOut}
+      navigate={navigate}
     >
-      {accommodations.map((accommodation) => (
-        <Accommodation
-          key={accommodation.id}
-          accommodation={accommodation}
-          onBook={() => onBook(accommodation.id)}
-        />
-      ))}
+      <div className="accommodations-list">
+        {accommodations.length === 0 ? (
+          <p className="empty">Aucun logement disponible pour ces critères.</p>
+        ) : (
+          accommodations.map((accommodation) => (
+            <Accommodation
+              key={accommodation.id}
+              accommodation={accommodation}
+              booking={booking === accommodation.id}
+              onBook={() => onBook(accommodation.id)}
+            />
+          ))
+        )}
+      </div>
     </Layout>
   );
 }
+
+HomePage.propTypes = {
+  session: PropTypes.object.isRequired,
+  onLogOut: PropTypes.func.isRequired,
+  navigate: PropTypes.func.isRequired,
+};
 
 export default HomePage;

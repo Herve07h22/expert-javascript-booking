@@ -3,29 +3,27 @@ export function login(payload) {
   return async function (dependencies, context) {
     const user = await dependencies.users.findByEmail(email);
     if (!user) {
-      // Utilisateur inconnu
-      return context.withError(UnknownUserEmail(email));
+      return context.withError(InvalidCredentials());
     }
 
-    if (user.encryptedPassword !== encrypt(password)) {
-      // Erreur de mot de passe
-      return context.withError(WrongPassword(user));
+    const matches = await dependencies.passwords.verify(
+      password,
+      user.hashedPassword
+    );
+    if (!matches) {
+      return context.withError(InvalidCredentials());
     }
 
-    // Tout est OK, ajoutons l'utilisateur au contexte
-    // pour les commandes suivantes qui en auront besoin
-    return context.withUser(user);
+    const token = await dependencies.sessions.create(user);
+    return context.withUser(user).withToken(token);
   };
 }
 
-export function UnknownUserEmail(email) {
-  return new Error(`Unknown user ${email}`);
-}
-
-export function WrongPassword(user) {
-  return new Error(`Wrong password ${user.email}`);
-}
-
-export function encrypt(text) {
-  return text; // TODO : utiliser une vraie fonction de hachage
+/**
+ * Un seul message pour les deux cas.
+ * Deux messages distincts permettent de tester si une adresse est inscrite
+ * sur la plateforme : c'est déjà une information qui ne vous appartient pas.
+ */
+export function InvalidCredentials() {
+  return new Error("Invalid email or password");
 }

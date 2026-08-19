@@ -1,6 +1,7 @@
 import { Stay } from "../values/Stay.js";
 import { Occupancy } from "../values/Occupancy.js";
 import { canHost } from "../rules/canHost.js";
+import { Booking } from "../entities/Booking.js";
 
 export function book(payload) {
   const { accommodationId } = payload;
@@ -55,12 +56,14 @@ export function book(payload) {
       return context.withError(AccommodationNotAvailable(accommodationId));
     }
 
-    await dependencies.bookings.save({
+    const booking = Booking.confirm({
+      id: dependencies.idProvider.newId(),
       tenantId: user.id,
       accommodationId,
       guests: guests.value,
       stay: stay.value,
     });
+    await dependencies.bookings.save(booking);
     return context;
   };
 }
