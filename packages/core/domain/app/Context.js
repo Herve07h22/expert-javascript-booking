@@ -3,10 +3,12 @@ export class Context {
     this.error = error;
     return this;
   }
+
   withUser(user) {
     this.loggedUser = user;
     return this;
   }
+
   isOk() {
     return !this.error;
   }

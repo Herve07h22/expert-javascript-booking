@@ -1,7 +1,6 @@
-import { encrypt } from "../domain/usecases/login";
+import { encrypt } from "../domain/usecases/login.js";
 
 export class MemoryUserRepository {
-  // On indique par défaut un utilisateur déjà enregistré
   _users = [
     {
       id: "tenant-1",
@@ -9,6 +8,7 @@ export class MemoryUserRepository {
       encryptedPassword: encrypt("secret"),
     },
   ];
+
   async findByEmail(email) {
     return this._users.find((user) => user.email === email);
   }
