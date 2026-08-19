@@ -294,10 +294,9 @@ it("A tenant can book the very day the previous one leaves", async () => {
   expect(session.error).toBeUndefined();
 });
 
-// Ce test échoue, et c'est documenté : le remède n'est pas dans le domaine,
-// mais dans l'infrastructure (chapitre 39). `it.fails` passera au rouge
-// le jour où quelqu'un le corrigera, et réclamera de devenir un `it`.
-it.fails("Two simultaneous bookings : only one is accepted", async () => {
+// Le it.fails du chapitre 29 est devenu un it : l'unité de travail sérialise
+// les scénarios. Le remède n'était pas dans le domaine.
+it("Two simultaneous bookings : only one is accepted", async () => {
   const app = new App(testDependencies());
 
   await Promise.all([

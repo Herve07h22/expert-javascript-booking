@@ -1,4 +1,5 @@
 import { Context } from "./Context.js";
+import { Rollback } from "../../infra/Rollback.js";
 
 export class App {
   constructor(dependencies, subscribers = {}) {
@@ -7,15 +8,25 @@ export class App {
   }
 
   async run(usecases) {
-    let context = new Context();
-    for (const usecase of usecases) {
-      // Inutile de continuer en cas d'erreur
-      if (context.isOk()) {
-        context = await usecase(this.dependencies, context);
+    const context = await this.dependencies.unitOfWork.run(
+      async (dependencies) => {
+        let context = new Context();
+        for (const usecase of usecases) {
+          // Inutile de continuer en cas d'erreur
+          if (context.isOk()) {
+            context = await usecase(dependencies, context);
+          }
+        }
+        // Une erreur métier annule aussi ce qui a été écrit avant elle.
+        if (!context.isOk()) {
+          throw new Rollback(context);
+        }
+        return context;
       }
-    }
+    );
 
-    // On publie ce qui est ACQUIS : rien si le scénario a échoué.
+    // Publication APRÈS la validation, jamais avant.
+    // Une transaction ne contient que des écritures annulables.
     if (context.isOk()) {
       await this.publish(context.events);
     }

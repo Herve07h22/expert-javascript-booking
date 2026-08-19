@@ -13,14 +13,30 @@ Chaque branche `step-XX` est un instantané du projet à un moment du cours.
 | `step-04` | 27 → 29 | le bandeau de recherche, la capacité, la disponibilité |
 | `step-05` | 30 → 33 | la session, l'écran de connexion, mes réservations, l'annulation |
 | `step-06` | 34 → 35 | le port de notification et les événements de domaine |
+| `step-07` | 36 → 39 | PostgreSQL, le repository SQL, les tests de contrat, la transaction |
 
 ## Installation
 
 ```bash
 nvm use          # node 22
 yarn             # toujours depuis la racine, jamais depuis un package
-yarn test        # les tests du domaine
+yarn test        # la suite rapide : quelques millisecondes
 ```
+
+À partir de `step-07`, une seconde suite vérifie les mêmes contrats contre une
+vraie base de données. Un faux PostgreSQL partagerait les bugs de votre
+compréhension de PostgreSQL :
+
+```bash
+docker run -d --rm --name booking-db \
+  -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=booking_test \
+  -p 55432:5432 postgres:16-alpine
+
+TEST_DATABASE_URL=postgres://postgres:secret@localhost:55432/booking_test \
+  yarn test:integration
+```
+
+Sans `TEST_DATABASE_URL`, cette suite ne ment pas : elle se déclare ignorée.
 
 Attention : dans un monorepo, les dépendances sont mutualisées à la racine.
 Lancer `yarn` depuis `packages/webapp` créerait un `node_modules` local et un
@@ -40,4 +56,7 @@ Les extraits de code des chapitres sont allégés pour rester lisibles. Ici :
 - les imports relatifs portent leur extension (`./Stay.js`), comme l'exige
   ESM lorsque le package déclare `"type": "module"` ;
 - la racine du monorepo expose un script `test`, pour pouvoir tout lancer
-  d'une seule commande (et pour l'intégration continue).
+  d'une seule commande (et pour l'intégration continue) ;
+- le hachage des mots de passe utilise `scrypt` (fourni par Node) plutôt
+  qu'`argon2id`, pour éviter une dépendance native. Le port est le même,
+  l'implémentation se remplace en une ligne du container.

@@ -6,6 +6,7 @@ import { MemoryQueries } from "./MemoryQueries.js";
 import { testPasswordHasher } from "./testPasswordHasher.js";
 import { testIdProvider } from "./testIdProvider.js";
 import { MemoryNotifications } from "./MemoryNotifications.js";
+import { MemoryUnitOfWork } from "./MemoryUnitOfWork.js";
 import { CalendarDay } from "../domain/values/CalendarDay.js";
 
 // Un logger silencieux : un test ne doit pas écrire dans la console.
@@ -22,7 +23,7 @@ export const testDateProvider = {
 export const testDependencies = () => {
   const accommodations = new MemoryAccommodationRepository();
   const bookings = new MemoryBookingRepository(accommodations);
-  return {
+  const dependencies = {
     users: new MemoryUserRepository(),
     accommodations,
     bookings,
@@ -34,4 +35,7 @@ export const testDependencies = () => {
     notifications: new MemoryNotifications(),
     logger: testLogger,
   };
+  // L'unité de travail reçoit le container qu'elle passera aux commandes.
+  dependencies.unitOfWork = new MemoryUnitOfWork(dependencies);
+  return dependencies;
 };

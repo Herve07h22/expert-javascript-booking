@@ -6,7 +6,10 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.js",
+    "test:all": "yarn test && yarn test:integration",
+    "build": "yarn workspace @booking/webapp build"
   },
   "devDependencies": {
     "vitest": "^1.6.0"

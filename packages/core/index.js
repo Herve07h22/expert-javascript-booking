@@ -20,3 +20,4 @@ export { BookingConfirmed, BookingCancelled } from "./domain/events.js";
 
 export { testDependencies } from "./infra/testDependencies.js";
 export { subscribers } from "./infra/subscribers.js";
+export { productionDependencies } from "./infra/productionDependencies.js";
