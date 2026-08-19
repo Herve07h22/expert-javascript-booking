@@ -1,19 +1,22 @@
 import { useState, useEffect } from "react";
 import { loader } from "../pages/HomePage";
 
-export function useAccomodations() {
+export function useAccommodations() {
   // Nos 2 états sur la page
   const [loading, setLoading] = useState(false);
-  const [accomodations, setAccomodations] = useState([]);
+  const [accommodations, setAccommodations] = useState([]);
+
   // Une fonction qui orchestre les changements d'état
-  const loadAccomodation = async () => {
+  const loadAccommodations = async () => {
     setLoading(true);
-    setAccomodations(await loader());
+    setAccommodations(await loader());
     setLoading(false);
   };
+
   // Un effet
   useEffect(() => {
-    loadAccomodation();
+    loadAccommodations();
   }, []);
-  return { accomodations, loading, refresh: loadAccomodation };
+
+  return { accommodations, loading, refresh: loadAccommodations };
 }

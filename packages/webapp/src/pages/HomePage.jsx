@@ -1,48 +1,58 @@
+import { useState } from "react";
+import { App, book, login, testDependencies, Stay } from "@booking/core";
 import { Layout } from "../components/Layout";
-import { Accomodation } from "../components/Accomodation";
-import { useAccomodations } from "../hooks/useAccomodations";
-import { App } from "@booking/core/domain/app/App";
-import { testDependencies } from "@booking/core/infra/testDependencies";
-import { login } from "@booking/core/domain/usecases/login";
-import { book } from "@booking/core/domain/usecases/book";
-import { toDate } from "@booking/core/domain/app/dates";
+import { Accommodation } from "../components/Accommodation";
+import { useAccommodations } from "../hooks/useAccommodations";
 
+// L'application est initialisée une seule fois, dans le module.
+// Surtout pas dans le loader ou l'action : les dépendances seraient
+// réinitialisées à chaque appel, et l'état reviendrait à l'état initial.
 const app = new App(testDependencies());
 
+// Les dates du séjour recherché. Elles viendront du bandeau de recherche plus tard.
+const searched = Stay.parse({ from: "2024-06-02", to: "2024-06-04" }).value;
+
 export async function loader() {
-  return  await app.dependencies.bookings.getAvailableAccomodations({
-    from: toDate("2024-06-02"),
-    to: toDate("2024-06-04"),
-  });
+  return await app.dependencies.bookings.getAvailableAccommodations(searched);
 }
 
-export async function action() {
+export async function action(accommodationId) {
   const session = await app.run([
     login({ email: "faketenant@mail.com", password: "secret" }),
     book({
-      accomodationId: "accomodation-1",
+      accommodationId,
       adults: 2,
       children: 3,
-      from: new Date("2024-06-02"),
-      to: new Date("2024-06-04"),
+      from: "2024-06-02",
+      to: "2024-06-04",
     }),
   ]);
-  console.log(session)
   return session.error
-    ? { status: "error", error: session.error }
+    ? { status: "error", error: session.error.message }
     : { status: "ok" };
 }
 
 function HomePage() {
-  const { accomodations, loading, refresh } = useAccomodations();
+  const { accommodations, loading, refresh } = useAccommodations();
+  const [error, setError] = useState(null);
+
+  const onBook = async (accommodationId) => {
+    const { status, error } = await action(accommodationId);
+    if (status === "ok") {
+      setError(null);
+      await refresh();
+    } else {
+      setError(error);
+    }
+  };
 
   return (
-    <Layout loading={loading}>
-      {accomodations.map((accomodation) => (
-        <Accomodation
-          key={accomodation.id}
-          accomodation={accomodation}
-          onBook={() => action().then(({status}) => status === "ok" ?  refresh() : {})}
+    <Layout loading={loading} error={error}>
+      {accommodations.map((accommodation) => (
+        <Accommodation
+          key={accommodation.id}
+          accommodation={accommodation}
+          onBook={() => onBook(accommodation.id)}
         />
       ))}
     </Layout>

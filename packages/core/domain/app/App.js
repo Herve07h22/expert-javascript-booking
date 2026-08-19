@@ -1,11 +1,12 @@
-import { Context } from "./Context";
+import { Context } from "./Context.js";
 
 export class App {
   constructor(dependencies) {
     this.dependencies = dependencies;
   }
+
   async run(usecases) {
-    var context = new Context();
+    let context = new Context();
     for (const usecase of usecases) {
       // Inutile de continuer en cas d'erreur
       if (context.isOk()) {

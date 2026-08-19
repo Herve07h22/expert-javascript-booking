@@ -1,17 +1,16 @@
-import { fakeAccomodations } from "./fakeAccomodations";
-import { isOverlapped, toDate } from "../domain/app/dates";
+import { fakeAccommodations } from "./fakeAccommodations.js";
 
 export class MemoryBookingRepository {
   _bookings = [];
-  _accomodations = fakeAccomodations;
+  _accommodations = fakeAccommodations;
 
   async save(booking) {
     this._bookings.push(booking);
   }
 
-  async listBookingsForAccomodationId(accomodationId) {
+  async listBookingsForAccommodationId(accommodationId) {
     return this._bookings.filter(
-      (booking) => booking.accomodationId === accomodationId
+      (booking) => booking.accommodationId === accommodationId
     );
   }
 
@@ -19,16 +18,14 @@ export class MemoryBookingRepository {
     return this._bookings.filter((booking) => booking.tenantId === tenantId);
   }
 
-  async getAvailableAccomodations({ from, to }) {
-    const bookedAccomodationsIds = this._bookings
-      .filter((booking) =>
-        isOverlapped(booking.interval, { from: toDate(from), to: toDate(to) })
-      )
-      .map((booking) => booking.accomodationId);
+  /** @param stay {import("../domain/values/Stay.js").Stay} la période recherchée */
+  async getAvailableAccommodations(stay) {
+    const bookedAccommodationsIds = this._bookings
+      .filter((booking) => booking.stay.overlaps(stay))
+      .map((booking) => booking.accommodationId);
 
-    return this._accomodations.filter(
-      (accomodation) =>
-        !bookedAccomodationsIds.some((id) => id === accomodation.id)
+    return this._accommodations.filter(
+      (accommodation) => !bookedAccommodationsIds.includes(accommodation.id)
     );
   }
 }

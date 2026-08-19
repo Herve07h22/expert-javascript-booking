@@ -18,14 +18,14 @@ export function login(payload) {
   };
 }
 
-function UnknownUserEmail(email) {
+export function UnknownUserEmail(email) {
   return new Error(`Unknown user ${email}`);
 }
 
-function WrongPassword(user) {
+export function WrongPassword(user) {
   return new Error(`Wrong password ${user.email}`);
 }
 
 export function encrypt(text) {
-  return text;
+  return text; // TODO : utiliser une vraie fonction de hachage
 }

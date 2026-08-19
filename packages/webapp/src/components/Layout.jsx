@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import "./Layout.css";
 
-function Layout({ children, loading }) {
+function Layout({ children, loading, error }) {
   return (
     <div className="layout">
       <header className="header">
@@ -14,6 +14,11 @@ function Layout({ children, loading }) {
         </div>
       </header>
       <main className="main-content">
+        {error && (
+          <div role="alert" className="error">
+            {error}
+          </div>
+        )}
         {loading ? (
           <div className="loading">Loading...</div>
         ) : (
@@ -25,8 +30,9 @@ function Layout({ children, loading }) {
 }
 
 Layout.propTypes = {
-  children: PropTypes.node.isRequired,
+  children: PropTypes.node,
   loading: PropTypes.bool,
+  error: PropTypes.string,
 };
 
 export { Layout };
