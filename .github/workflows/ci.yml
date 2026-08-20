@@ -30,13 +30,19 @@ jobs:
       # s'installe silencieusement, et vous déployez du code jamais exécuté.
       - run: yarn install --frozen-lockfile
 
-      - name: typecheck
-        run: yarn typecheck
-        continue-on-error: false
-        if: hashFiles('tsconfig.json') != ''
-
+      # `npx vitest run` fonctionne sur TOUTES les étapes, quel que soit le
+      # script `test` du package.json (qui est en mode surveillance avant
+      # step-02, et ferait tourner l'intégration continue indéfiniment).
       - name: tests rapides
-        run: yarn test
+        run: npx vitest run
+
+      - name: typecheck
+        run: |
+          if grep -q '"typecheck"' package.json; then
+            yarn typecheck
+          else
+            echo "Pas de TypeScript avant step-09 : rien à faire."
+          fi
 
   # ---------------------------------------------------------------------------
   # Les tests de contrat, contre un vrai PostgreSQL.
