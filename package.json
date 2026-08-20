@@ -8,16 +8,25 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.js",
-    "test:all": "yarn test && yarn test:integration",
+    "test:all": "yarn typecheck && yarn test && yarn test:integration",
+    "typecheck": "tsc --noEmit && yarn workspace @booking/webapp exec tsc --noEmit",
+    "e2e": "playwright test",
     "build": "yarn workspace @booking/webapp build",
-    "typecheck": "tsc --noEmit && yarn workspace @booking/webapp exec tsc --noEmit"
+    "migrate": "yarn workspace @booking/infra migrate"
   },
   "devDependencies": {
+    "@playwright/test": "^1.47",
+    "@testing-library/dom": "^10",
+    "@testing-library/jest-dom": "^6",
+    "@testing-library/react": "^16",
+    "@testing-library/user-event": "^14",
     "@types/cookie-parser": "^1",
     "@types/express": "^4",
     "@types/node": "^22",
     "@types/pg": "^8",
     "@types/supertest": "^6",
+    "jsdom": "^25",
+    "tsx": "^4.19.0",
     "typescript": "^5.5.4",
     "vitest": "^1.6.0"
   }

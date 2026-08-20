@@ -8,3 +8,4 @@ export { SQLBookingRepository } from "./src/SQLBookingRepository.js";
 export { SQLUserRepository } from "./src/SQLUserRepository.js";
 export type { Mailer } from "./src/EmailNotifications.js";
 export type { Queryable } from "./src/Queryable.js";
+export { migrate } from "./src/migrate.js";

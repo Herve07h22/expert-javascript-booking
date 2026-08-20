@@ -6,8 +6,8 @@
   "main": "src/server.ts",
   "license": "MIT",
   "scripts": {
-    "start": "node --experimental-strip-types src/server.ts",
-    "dev": "node --watch --experimental-strip-types src/server.ts"
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts"
   },
   "dependencies": {
     "@booking/core": "*",

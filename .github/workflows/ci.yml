@@ -1,0 +1,130 @@
+name: CI
+
+# Chaque branche `step-XX` est un instantané du projet : chacune doit rester
+# verte, sinon le lecteur qui la clone tombe sur du code cassé.
+on:
+  push:
+    branches: ["step-**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # La suite rapide de la branche poussée : quelques centaines de millisecondes.
+  # L'ordre n'est pas anodin — le plus rapide d'abord. Une erreur de typage
+  # doit être signalée en quinze secondes, pas après huit minutes.
+  # ---------------------------------------------------------------------------
+  test:
+    name: tests (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      # --frozen-lockfile : on installe EXACTEMENT ce qui a été testé.
+      # Sans cette option, une version corrective publiée entre-temps
+      # s'installe silencieusement, et vous déployez du code jamais exécuté.
+      - run: yarn install --frozen-lockfile
+
+      - name: typecheck
+        run: yarn typecheck
+        continue-on-error: false
+        if: hashFiles('tsconfig.json') != ''
+
+      - name: tests rapides
+        run: yarn test
+
+  # ---------------------------------------------------------------------------
+  # Les tests de contrat, contre un vrai PostgreSQL.
+  # Un faux PostgreSQL partagerait les bugs de votre compréhension de PostgreSQL.
+  # ---------------------------------------------------------------------------
+  integration:
+    name: contrats SQL (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: booking_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - name: y a-t-il des tests d'intégration sur cette étape ?
+        id: check
+        run: |
+          if ls packages/*/tests/*.integration.test.* >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "Aucun test d'intégration avant step-07 : rien à faire."
+          fi
+
+      - name: tests de contrat
+        if: steps.check.outputs.found == 'true'
+        env:
+          TEST_DATABASE_URL: postgres://postgres:secret@localhost:5432/booking_test
+        run: yarn test:integration
+
+  # ---------------------------------------------------------------------------
+  # Le bout en bout. Aussi peu de scénarios que possible : lent, instable par
+  # nature, et il échoue en désignant l'écran plutôt que la cause.
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: bout en bout (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - name: y a-t-il des tests de bout en bout sur cette étape ?
+        id: check
+        run: |
+          if [ -f playwright.config.ts ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "Aucun test de bout en bout avant step-10 : rien à faire."
+          fi
+
+      - name: installer le navigateur
+        if: steps.check.outputs.found == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: construire la webapp
+        if: steps.check.outputs.found == 'true'
+        run: yarn workspace @booking/webapp build
+
+      - name: scénarios
+        if: steps.check.outputs.found == 'true'
+        run: yarn e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure() && steps.check.outputs.found == 'true'
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

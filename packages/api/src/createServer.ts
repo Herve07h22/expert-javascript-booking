@@ -2,7 +2,7 @@ import express from "express";
 import type { Express, NextFunction, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import { randomUUID } from "node:crypto";
-import type { App, Logger } from "@booking/core";
+import type { App, Dependencies, Logger } from "@booking/core";
 import { routes } from "./routes.js";
 
 /**
@@ -14,7 +14,8 @@ export function createServer(
   {
     logger,
     isProduction = false,
-  }: { logger: Logger; isProduction?: boolean }
+    dependencies,
+  }: { logger: Logger; isProduction?: boolean; dependencies?: Dependencies }
 ): Express {
   const server = express();
 
@@ -33,8 +34,31 @@ export function createServer(
   server.use(cookieParser());
   server.use(routes(app, { logger, isProduction }));
 
+  /**
+   * Deux sondes, pas une.
+   *
+   * /health (liveness) : ce processus est-il vivant ? S'il échoue, on
+   * REDÉMARRE le conteneur. Ne vérifiez SURTOUT pas la base ici : un hoquet
+   * de dix secondes redémarrerait toutes vos instances en même temps, et un
+   * incident mineur deviendrait une panne totale.
+   *
+   * /ready (readiness) : peut-il servir du trafic ? S'il échoue, on cesse de
+   * lui ENVOYER des requêtes, sans le tuer.
+   */
   server.get("/health", (_request, response) => {
     response.json({ ok: true });
+  });
+
+  server.get("/ready", (_request, response) => {
+    void (async () => {
+      try {
+        await app.dependencies.accommodations.all();
+        response.json({ ok: true });
+      } catch (error) {
+        logger.error({ error }, "not ready");
+        response.status(503).json({ ok: false });
+      }
+    })();
   });
 
   // Sans ce filet, une exception non prévue laisse la requête pendante.

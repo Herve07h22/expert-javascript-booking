@@ -1,11 +1,6 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import pg from "pg";
 import { configurePgTypes } from "../src/pgTypes.js";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const migrationsDir = join(here, "..", "migrations");
+import { migrate as runMigrations } from "../src/migrate.js";
 
 /**
  * Un faux PostgreSQL partagerait les bugs de votre compréhension de
@@ -21,9 +16,9 @@ export function testDatabase() {
 
     async migrate() {
       await pool.query(`drop schema public cascade; create schema public;`);
-      for (const file of readdirSync(migrationsDir).sort()) {
-        await pool.query(readFileSync(join(migrationsDir, file), "utf8"));
-      }
+      // Le même migrateur qu'en production : c'est LUI que les tests doivent
+      // exercer, pas une variante écrite pour l'occasion.
+      await runMigrations(process.env.TEST_DATABASE_URL as string);
     },
 
     /** Brutal, lisible, et instantané sur des tables vides. */
