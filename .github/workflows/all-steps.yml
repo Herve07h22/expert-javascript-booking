@@ -1,0 +1,81 @@
+name: Toutes les étapes
+
+# Le dépôt n'a pas une branche principale : il en a dix, et chacune doit
+# rester verte. Ce workflow les vérifie toutes, d'un coup.
+#
+# Lancez-le à la main après avoir modifié une étape, et une fois par semaine
+# pour attraper ce que le temps casse : une dépendance dépréciée, une image
+# Docker qui bouge, un test qui dépendait d'une date.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # tous les lundis à 6 h UTC
+
+jobs:
+  steps:
+    name: ${{ matrix.step }}
+    runs-on: ubuntu-latest
+    strategy:
+      # fail-fast: false — on veut savoir QUELLES étapes cassent, pas
+      # seulement qu'une étape casse.
+      fail-fast: false
+      matrix:
+        step:
+          - step-01
+          - step-02
+          - step-03
+          - step-04
+          - step-05
+          - step-06
+          - step-07
+          - step-08
+          - step-09
+          - step-10
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: booking_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.step }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      # step-01 n'a pas encore de script `test` en mode non interactif :
+      # `vitest run` fonctionne partout, quel que soit le package.json.
+      - name: tests rapides
+        run: npx vitest run
+
+      - name: typecheck
+        run: |
+          if grep -q '"typecheck"' package.json; then
+            yarn typecheck
+          else
+            echo "Pas de TypeScript avant step-09 : rien à faire."
+          fi
+
+      - name: tests de contrat
+        env:
+          TEST_DATABASE_URL: postgres://postgres:secret@localhost:5432/booking_test
+        run: |
+          if ls packages/*/tests/*.integration.test.* >/dev/null 2>&1; then
+            yarn test:integration
+          else
+            echo "Aucun test d'intégration avant step-07 : rien à faire."
+          fi
