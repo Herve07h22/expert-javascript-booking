@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 // TEST_DATABASE_URL=postgres://... yarn test:integration
 export default defineConfig({
   test: {
-    include: ["**/*.integration.test.js"],
+    include: ["**/*.integration.test.?(c|m)[jt]s"],
     exclude: ["**/node_modules/**", "**/dist/**"],
   },
 });

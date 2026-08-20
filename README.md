@@ -15,6 +15,7 @@ Chaque branche `step-XX` est un instantané du projet à un moment du cours.
 | `step-06` | 34 → 35 | le port de notification et les événements de domaine |
 | `step-07` | 36 → 39 | PostgreSQL, le repository SQL, les tests de contrat, la transaction |
 | `step-08` | 40 → 42 | l'API HTTP, le front qui parle au back, les erreurs codées |
+| `step-09` | 43 → 45 | TypeScript, l'état de chargement, classes ou fonctions |
 
 ## Installation
 
@@ -22,6 +23,7 @@ Chaque branche `step-XX` est un instantané du projet à un moment du cours.
 nvm use          # node 22
 yarn             # toujours depuis la racine, jamais depuis un package
 yarn test        # la suite rapide : quelques millisecondes
+yarn typecheck   # à partir de step-09
 ```
 
 À partir de `step-07`, une seconde suite vérifie les mêmes contrats contre une

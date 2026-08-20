@@ -7,7 +7,7 @@ export default defineConfig({
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
-      "**/*.integration.test.js",
+      "**/*.integration.test.?(c|m)[jt]s",
     ],
   },
 });
